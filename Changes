@@ -1,0 +1,6 @@
+Revision history for Perl extension Hash::Mogrify.
+
+0.01  Mon Jul 20 12:04:12 2009
+	- original version; created by h2xs 1.23 with options
+		-AXc -n Hash::Mogrify
+
