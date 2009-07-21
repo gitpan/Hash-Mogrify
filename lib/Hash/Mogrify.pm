@@ -1,6 +1,6 @@
 package Hash::Mogrify;
 
-use 5.010000;
+use 5.006;
 use strict;
 use warnings;
 
@@ -69,11 +69,12 @@ None by default.
 
 =cut 
 
+use vars qw(@ISA %EXPORT_TAGS @EXPORT_OK @EXPORT $VERSION $GLOBALMAP);
 require Exporter;
 
-our @ISA = qw(Exporter);
+@ISA = qw(Exporter);
 
-our %EXPORT_TAGS = ( 
+%EXPORT_TAGS = ( 
     'all' => [ qw(
         hmap
         kmap
@@ -89,19 +90,17 @@ our %EXPORT_TAGS = (
     force      => [],
     dieonerror => [],);
 
-our @EXPORT_OK = ( @{ $EXPORT_TAGS{'all'} } );
+@EXPORT_OK = ( @{ $EXPORT_TAGS{'all'} }, @{ $EXPORT_TAGS{'const'} });
 
-our @EXPORT = qw(
-	
-);
+@EXPORT = ();
 
-our $VERSION = '0.02';
+$VERSION = '0.03';
 
-sub FORCE     { 1; }
-sub NOWARNING { 2; }
-sub DIEONERR  { 4; }
+sub FORCE()     { 1; }
+sub NOWARNING() { 2; }
+sub DIEONERR()  { 4; }
 
-our $GLOBALMAP = 0;
+$GLOBALMAP = 0;
 
 sub import {
     $GLOBALMAP |= FORCE     if(grep /:force/, @_);
@@ -120,32 +119,36 @@ sub kmap(&@) {
     }
 
     my $temp;
-    for(keys(%{ $hash })) {
+    for (keys %{$hash}) {
         my $value = $hash->{$_};
-        &{$code};
+        $code->($_, $value);
         _double($temp, $_, $bitmap) or return;
         $temp->{$_} = $value;
     }
     %{$hash} = %{$temp};
 
-    return %{$hash} if wantarray;
+    return %{$hash} if(wantarray);
     return $hash;
 }
 
 sub vmap(&@) {
     my $code = shift;
     my $hash = $_[0];
-    $hash = { @_ } if(!ref $hash);
+    my $bitmap; # we don't use this, but maybe once :)
+    if(!ref $hash) {
+        $bitmap = shift if((scalar @_) % 2);
+        $hash = { @_ };
+    }
 
     my $temp;
     for my $key (keys(%{ $hash })) {
         $_ = $hash->{$key};
-        &{$code};
+        $code->($key, $_);
         $temp->{$key} = $_;
     }
     %{$hash} = %{$temp};
 
-    return %{$hash} if wantarray;
+    return %{$hash} if(wantarray);
     return $hash;
 }
 
@@ -154,20 +157,20 @@ sub hmap(&@) {
     my $hash = $_[0];
     my $bitmap;
     if(!ref $hash) {
-        $bitmap = shift if((scalar @_) % 2);
+        $bitmap = shift if(@_ % 2);
         $hash = { @_ };
     }
 
     my $temp;
     for my $key (keys(%{ $hash })) {
         my $value = $hash->{$key};
-        &$code($key, $value);
+        $code->($key, $value);
         _double($temp, $key, $bitmap) or return;
         $temp->{$key} = $value;
     }
     %{$hash} = %{$temp};
 
-    return %{$hash} if wantarray;
+    return %{$hash} if(wantarray);
     return $hash;
 }
 
@@ -177,7 +180,7 @@ sub ktrans($@) {
 
     my $bitmap;
     if(!ref $hash) {
-        $bitmap = shift if((scalar @_) % 2);
+        $bitmap = shift if(@_ % 2);
         $hash = { @_ };
     }
 
@@ -194,7 +197,7 @@ sub ktrans($@) {
     }
     %{$hash} = %{$temp};
 
-    return %{$hash} if wantarray;
+    return %{$hash} if(wantarray);
     return $hash;
 }
 
