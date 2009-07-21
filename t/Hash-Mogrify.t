@@ -5,7 +5,7 @@
 
 # change 'tests => 1' to 'tests => last_test_to_print';
 
-use Test::More tests => 12;
+use Test::More tests => 16;
 BEGIN { use_ok('Hash::Mogrify') };
 
 #########################
@@ -44,3 +44,8 @@ is($testhash{foo},   'bor', 'value of foo is still bor');
 kmap { $_ =~ s/baz/foo/ } \%testhash;
 is($testhash{foo},   'bor', 'value of foo is still bor');
 
+my %new = ktrans { foo => 'fool', daath => 'dood' }, %testhash;
+is($new{dood},    'freedom', 'key death changed into dood');
+isnt($new{daath}, 'key daath no longer exists');
+is($new{fool},    'bor', 'key foo changed into fool');
+isnt($new{foo},   'key foo no longer exists');
